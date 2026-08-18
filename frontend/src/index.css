@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 6%;
+    --surface: 0 0% 10%;
+    --border: 0 0% 16%;
+    --primary: 0 0% 97%;
+    --muted: 0 0% 58%;
+    --success: 142 55% 36%;
+    --warning: 38 85% 52%;
+    --danger: 348 72% 50%;
+    --info: 213 85% 62%;
+  }
+
+  body {
+    @apply bg-background text-primary antialiased font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Improved selection */
+  ::selection {
+    background: hsl(var(--border));
+    color: hsl(var(--primary));
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted) / 0.5);
+  }
+}
+
+@layer components {
+  /* Focus state — keyboard-only, not mouse */
+  .premium-focus {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background;
+  }
+
+  /* Semantic screen reader labels */
+  .sr-verdict-pass { @apply sr-only; }
+  .sr-verdict-warn { @apply sr-only; }
+  .sr-verdict-fail { @apply sr-only; }
+}
+
+@layer utilities {
+  /* Reduced motion — disable all animations for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
