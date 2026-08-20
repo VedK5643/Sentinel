@@ -1,17 +1,19 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, GitCompare, ArrowRight } from 'lucide-react';
+import { Play, GitCompare, ArrowRight, Upload } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { ScoreRing } from '@/components/ui/ScoreRing';
 import { AgentCard } from '@/components/AgentCard';
 import { Trend } from '@/components/ui/Trend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { UploadAgentModal } from '@/components/UploadAgentModal';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { MOCK_AGENTS, HARDENED_AGENT, HARDENED_TREND } from '@/data/mockData';
+import type { Agent } from '@/types';
 
 const TOOLTIP_STYLE = {
   backgroundColor: 'hsl(0 0% 10%)',
@@ -38,6 +40,8 @@ export default function Home() {
   const navigate = useNavigate();
   const featured = HARDENED_AGENT;
   const trendData = HARDENED_TREND.map(p => ({ ...p, date: formatDate(p.date) }));
+  const [uploadOpen, setUploadOpen] = React.useState(false);
+  const [agents, setAgents] = React.useState<Agent[]>(MOCK_AGENTS);
 
   const stats = [
     { label: 'Scenarios Run', value: featured.totalScenarios },
@@ -186,20 +190,39 @@ export default function Home() {
       <div className="mt-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">Agents</h2>
-          <button
-            onClick={() => navigate('/agents')}
-            className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-primary"
-            aria-label="View all agents"
-          >
-            View all <ArrowRight className="h-3 w-3" aria-hidden="true" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setUploadOpen(true)}
+              aria-label="Upload a new agent config"
+            >
+              <Upload className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+              Upload Agent
+            </Button>
+            <button
+              onClick={() => navigate('/agents')}
+              className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-primary"
+              aria-label="View all agents"
+            >
+              View all <ArrowRight className="h-3 w-3" aria-hidden="true" />
+            </button>
+          </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          {MOCK_AGENTS.map(agent => (
+          {agents.map(agent => (
             <AgentCard key={agent.id} agent={agent} />
           ))}
         </div>
       </div>
+
+      <UploadAgentModal
+        isOpen={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onSuccess={(newAgent) => {
+          setAgents(prev => [...prev, newAgent]);
+        }}
+      />
 
     </div>
   );

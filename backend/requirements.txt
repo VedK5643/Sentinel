@@ -1,7 +1,10 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 groq
+google-generativeai
 python-dotenv
+python-multipart
 pydantic
+sse-starlette

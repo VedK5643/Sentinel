@@ -1,0 +1,110 @@
+Created At: 2026-08-19T17:15:36+05:30
+Completed At: 2026-08-19T17:15:43+05:30
+The following changes were made by the replace_file_content tool to: e:\VEDAGYA\Sentinel\sentinel-ai\backend\services\harness.py. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -116,22 +116,13 @@
+     return f"{mins:02d}:{secs:02d}.{ms:03d}"
+ 
+ 
+-def run_scenario(agent, scenario: dict) -> dict:
+-    """
+-    Run a single scenario against the agent.
+-
++async def run_scenario(agent, scenario: dict) -> dict:
++    """
++    Run the harness for a single scenario.
+     Returns:
+-      {
+-        "trace": [TraceEvent, ...],
+-        "flags": {
+-          "loop_detected": bool,
+-          "destructive_action_called": bool,
+-          "confirmed_before_destructive": bool,
+-        }
+-      }
+-    """
+-    system_prompt = _build_system_prompt(agent)
+-    trace: list[dict] = []
++       { "trace": [...], "flags": {loop_detected, destructive_action_called, ...} }
++    """
++    trace = []
+     flags = {
+         "loop_detected": False,
+         "destructive_action_called": False,
+@@ -138,37 +138,44 @@
+     }
+ 
+-    tool_call_counts: dict[str, int] = {}
+-    injection_delivered = False
+-    conversation_parts: list[str] = []
+-    event_idx = 0
+-    elapsed_ms = 0
+-
+-    # ── Turn 0: user message ──────────────────────────────────────────────
+-    user_msg = scenario["scenario_text"]
++    # Add the initial scenario text from the simulated user
+     trace.append({
+-        "id": f"ev-{event_idx:02d}",
+         "role": "user",
+-        "timestamp": _timestamp(0, elapsed_ms),
+-        "content": user_msg,
++        "content": scenario.get("scenario_text", ""),
++        "timestamp": datetime.now(timezone.utc).isoformat(),
+     })
+-    event_idx += 1
+-    conversation_parts.append(f"Customer: {user_msg}")
+-
+-    # ── Up to 3 turns ─────────────────────────────────────────────────────
+-    for turn in range(3):
+-        # Ask the LLM to respond as the agent
+-        user_prompt = "\n".join(conversation_parts)
+-        if turn > 0:
+-            user_prompt += "\n\nContinue assisting the customer based on the tool response above."
+-
+-        try:
+-            response = call_llm(system_prompt, user_prompt)
++
++    system_prompt = _build_system_prompt(agent)
++
++    # ── Tracking variables ──
++    injection_delivered = False
++    tool_counts: dict[str, int] = {}
++    
++    MAX_TURNS = 3
++    turns = 0
++
++    while turns < MAX_TURNS:
++        # Build conversational history
++        user_prompt_lines = []
++        for event in trace:
++            if event["role"] == "user":
++                user_prompt_lines.append(f"USER: {event['content']}")
++            elif event["role"] == "assistant":
++                user_prompt_lines.append(f"ASSISTANT: {event['content']}")
++            elif event["role"] == "tool_call":
++                tc = json.dumps({"name": event["toolName"], "arguments": json.loads(event["toolArgs"])})
++                user_prompt_lines.append(f"ASSISTANT TOOL CALL: {tc}")
++            elif event["role"] == "tool_response":
++                tr = json.loads(event["toolResult"])
++                user_prompt_lines.append(f"TOOL RESPONSE: {json.dumps(tr)}")
++
++        user_prompt = "\n".join(user_prompt_lines)
++
++        try:
++            response = await call_llm(system_prompt, user_prompt)
+         except Exception as exc:
+-            logger.error("LLM call failed during harness turn %d: %s", turn, exc)
+-            trace.append({
+-                "id": f"ev-{event_idx:02d}",
++            logger.error("LLM call failed during harness turn %d: %s", turns, exc)
++            trace.append({
+                 "role": "warning",
+-                "timestamp": _timestamp(0, elapsed_ms),
+                 "content": f"LLM call failed: {exc}",
+             })
+             event_idx += 1
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
+
+We did our best to apply changes despite some inaccuracies. Double check if the edit applied is what you intended.

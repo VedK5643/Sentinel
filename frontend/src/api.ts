@@ -124,3 +124,40 @@ export async function getScorecard(agentId: string): Promise<Agent | null> {
   // When the backend exposes /agents/{id}/scorecard this can be split out.
   return getAgent(agentId);
 }
+
+// ─── Agent Upload ─────────────────────────────────────────────────────────────
+
+/** Error type returned when the backend rejects an upload with a 422. */
+export class UploadValidationError extends Error {
+  constructor(public detail: string) {
+    super(detail);
+    this.name = 'UploadValidationError';
+  }
+}
+
+/**
+ * Upload a .json config file to register a new agent.
+ * Returns the created Agent on success.
+ * Throws UploadValidationError on 422 with the backend's error detail.
+ */
+export async function uploadAgent(file: File): Promise<Agent> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${BASE_URL}/agents/upload`, {
+    method: 'POST',
+    body: formData,
+    // Do NOT set Content-Type — the browser sets the multipart boundary
+  });
+
+  if (!res.ok) {
+    if (res.status === 422) {
+      const body = await res.json().catch(() => null);
+      const detail = body?.detail ?? 'Upload rejected — check your JSON format.';
+      throw new UploadValidationError(detail);
+    }
+    throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+  }
+
+  return res.json() as Promise<Agent>;
+}
