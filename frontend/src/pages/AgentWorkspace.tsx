@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { useParams, useNavigate, NavLink, Outlet } from 'react-router-dom';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
-import { getAgent } from '@/data/mockData';
+import { getAgent } from '@/api';
+import type { Agent } from '@/types';
 import { AgentStatusBadge } from '@/components/ui/AgentStatusBadge';
 import { Trend } from '@/components/ui/Trend';
 import { cn } from '@/utils';
@@ -16,7 +17,27 @@ const TABS = [
 export default function AgentWorkspace() {
   const { agentId } = useParams<{ agentId: string }>();
   const navigate = useNavigate();
-  const agent = agentId ? getAgent(agentId) : null;
+  const [agent, setAgent] = React.useState<Agent | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function load() {
+      if (!agentId) return;
+      setLoading(true);
+      const data = await getAgent(agentId);
+      setAgent(data);
+      setLoading(false);
+    }
+    load();
+  }, [agentId]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <p className="text-sm text-muted">Loading agent...</p>
+      </div>
+    );
+  }
 
   if (!agent) {
     return (
