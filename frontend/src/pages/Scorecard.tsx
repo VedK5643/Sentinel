@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { Printer } from 'lucide-react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, Tooltip,
@@ -11,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Trend } from '@/components/ui/Trend';
 import { VerdictBadge } from '@/components/VerdictBadge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils';
 
 interface Context { agent: Agent; }
@@ -39,6 +41,12 @@ export default function Scorecard() {
 
   return (
     <div className="space-y-8">
+      <div className="flex justify-end">
+        <Button variant="secondary" onClick={() => window.print()} className="gap-2">
+          <Printer className="h-4 w-4" />
+          Print Scorecard
+        </Button>
+      </div>
 
       {/* ── Category Scores – primary ── */}
       <div>
