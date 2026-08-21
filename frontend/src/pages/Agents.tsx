@@ -4,29 +4,19 @@ import { getAgents } from '@/api';
 import { AgentCard } from '@/components/AgentCard';
 import type { Agent } from '@/types';
 
+import { useQuery } from '@tanstack/react-query';
+
 type SortKey = 'reliability' | 'lastAudit' | 'name';
 
 export default function Agents() {
-  const [agents, setAgents] = React.useState<Agent[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const { data: agents = [], isLoading: loading } = useQuery({
+    queryKey: ['agents'],
+    queryFn: getAgents,
+  });
+
   const [query, setQuery] = React.useState('');
   const [sort, setSort] = React.useState<SortKey>('reliability');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
-
-  React.useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const data = await getAgents();
-        setAgents(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
 
   const filtered = React.useMemo<Agent[]>(() => {
     let list = [...agents];

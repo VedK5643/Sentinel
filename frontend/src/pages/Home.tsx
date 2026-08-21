@@ -29,6 +29,8 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+import { useQuery } from '@tanstack/react-query';
+
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
   visible: (i: number) => ({
@@ -42,19 +44,11 @@ export default function Home() {
   const featured = HARDENED_AGENT;
   const trendData = HARDENED_TREND.map(p => ({ ...p, date: formatDate(p.date) }));
   const [uploadOpen, setUploadOpen] = React.useState(false);
-  const [agents, setAgents] = React.useState<Agent[]>([]);
-
-  React.useEffect(() => {
-    async function load() {
-      try {
-        const data = await getAgents();
-        setAgents(data);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    load();
-  }, []);
+  
+  const { data: agents = [] } = useQuery({
+    queryKey: ['agents'],
+    queryFn: getAgents,
+  });
 
   const stats = [
     { label: 'Scenarios Run', value: featured.totalScenarios },

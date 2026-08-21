@@ -8,3 +8,5 @@ python-dotenv
 python-multipart
 pydantic
 sse-starlette
+celery
+redis

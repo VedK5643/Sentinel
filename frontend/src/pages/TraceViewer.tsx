@@ -158,8 +158,24 @@ export default function TraceViewer() {
   const { traceId } = useParams<{ traceId: string }>();
   const navigate = useNavigate();
   const [filter, setFilter] = React.useState<FilterOption>('all');
+  const [isReplaying, setIsReplaying] = React.useState(false);
+  const [replayIndex, setReplayIndex] = React.useState(0);
 
   const trace = traceId ? getTrace(traceId) : null;
+
+  React.useEffect(() => {
+    if (!isReplaying || !trace) return;
+    const interval = setInterval(() => {
+      setReplayIndex(prev => {
+        if (prev >= trace.events.length) {
+          setIsReplaying(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 600);
+    return () => clearInterval(interval);
+  }, [isReplaying, trace]);
 
   if (!trace) {
     return (
@@ -176,9 +192,11 @@ export default function TraceViewer() {
     );
   }
 
+  const eventsToDisplay = isReplaying ? trace.events.slice(0, replayIndex) : trace.events;
+
   const filteredEvents = filter === 'all'
-    ? trace.events
-    : trace.events.filter(e => e.role === filter);
+    ? eventsToDisplay
+    : eventsToDisplay.filter(e => e.role === filter);
 
   const isPass = trace.verdict === 'pass';
 
@@ -211,21 +229,35 @@ export default function TraceViewer() {
         {/* ── Timeline ── */}
         <div>
           {/* Filter bar */}
-          <div className="mb-6 flex flex-wrap gap-1.5">
-            {FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => setFilter(f.value)}
-                className={cn(
-                  'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                  filter === f.value
-                    ? 'bg-surface border border-border text-primary'
-                    : 'text-muted hover:text-primary'
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-1.5">
+              {FILTERS.map(f => (
+                <button
+                  key={f.value}
+                  onClick={() => setFilter(f.value)}
+                  className={cn(
+                    'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                    filter === f.value
+                      ? 'bg-surface border border-border text-primary'
+                      : 'text-muted hover:text-primary'
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => {
+                setReplayIndex(0);
+                setIsReplaying(true);
+              }}
+              disabled={isReplaying}
+              className="flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-primary/90 disabled:opacity-50"
+            >
+              <div className="h-2 w-2 rounded-full bg-black animate-pulse" style={{ display: isReplaying ? 'block' : 'none' }} />
+              {isReplaying ? 'Replaying...' : 'Replay Trace'}
+            </button>
           </div>
 
           {/* Events */}

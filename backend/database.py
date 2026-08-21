@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.pool import NullPool
 
 load_dotenv()
 
@@ -18,8 +19,7 @@ if "pgbouncer=true" in DATABASE_URL:
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
+    poolclass=NullPool,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

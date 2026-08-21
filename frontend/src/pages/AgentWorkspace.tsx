@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { useParams, useNavigate, NavLink, Outlet } from 'react-router-dom';
+import { useParams, useNavigate, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { getAgent } from '@/api';
 import type { Agent } from '@/types';
@@ -17,24 +18,13 @@ const TABS = [
 export default function AgentWorkspace() {
   const { agentId } = useParams<{ agentId: string }>();
   const navigate = useNavigate();
-  const [agent, setAgent] = React.useState<Agent | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const location = useLocation();
 
-  const refreshAgent = React.useCallback(async () => {
-    if (!agentId) return;
-    const data = await getAgent(agentId);
-    setAgent(data);
-  }, [agentId]);
-
-  React.useEffect(() => {
-    async function load() {
-      if (!agentId) return;
-      setLoading(true);
-      await refreshAgent();
-      setLoading(false);
-    }
-    load();
-  }, [agentId, refreshAgent]);
+  const { data: agent, isLoading: loading } = useQuery({
+    queryKey: ['agent', agentId],
+    queryFn: () => getAgent(agentId!),
+    enabled: !!agentId,
+  });
 
   if (loading) {
     return (
@@ -131,8 +121,7 @@ export default function AgentWorkspace() {
         })}
       </div>
 
-      {/* Tab content rendered by nested routes */}
-      <Outlet context={{ agent, refreshAgent }} />
+      <Outlet context={{ agent }} />
     </div>
   );
 }

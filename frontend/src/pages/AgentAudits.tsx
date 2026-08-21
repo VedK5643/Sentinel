@@ -8,9 +8,10 @@ import { ScenarioRow } from '@/components/ScenarioRow';
 import { ScoreRing } from '@/components/ui/ScoreRing';
 import { Button } from '@/components/ui/Button';
 
+import { useQueryClient } from '@tanstack/react-query';
+
 interface Context {
   agent: Agent;
-  refreshAgent: () => Promise<void>;
 }
 
 const PHASE_PROGRESS: Record<string, number> = {
@@ -25,16 +26,18 @@ const PHASE_PROGRESS: Record<string, number> = {
 };
 
 export default function AgentAudits() {
-  const { agent, refreshAgent } = useOutletContext<Context>();
+  const { agent } = useOutletContext<Context>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const sim = useAuditSimulation(agent.id);
 
   React.useEffect(() => {
     if (sim.phase === 'complete') {
-      refreshAgent();
+      queryClient.invalidateQueries({ queryKey: ['agent', agent.id] });
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
     }
-  }, [sim.phase, refreshAgent]);
+  }, [sim.phase, queryClient, agent.id]);
 
   // Compute progress bar value
   const progressBase = PHASE_PROGRESS[sim.phase] ?? 0;
