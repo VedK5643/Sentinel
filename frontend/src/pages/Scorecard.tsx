@@ -7,7 +7,6 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import type { Agent } from '@/types';
-import { getTrend } from '@/data/mockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Trend } from '@/components/ui/Trend';
 import { VerdictBadge } from '@/components/VerdictBadge';
@@ -31,7 +30,11 @@ function formatDate(iso: string) {
 
 export default function Scorecard() {
   const { agent } = useOutletContext<Context>();
-  const trend = getTrend(agent.id).map(p => ({ ...p, date: formatDate(p.date) }));
+  const trend = agent.versions.map(v => ({
+    date: formatDate(v.date),
+    reliability: v.reliability,
+    version: v.version,
+  }));
 
   const radarData = agent.categoryScores.map(c => ({
     subject: c.name.replace(' ', '\n'),
@@ -95,22 +98,29 @@ export default function Scorecard() {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={trend} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(0 0% 16%)" vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: 'hsl(0 0% 60%)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis domain={[60, 100]} tick={{ fill: 'hsl(0 0% 60%)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`${v}`, 'Reliability']} />
-              <Line
-                type="monotone"
-                dataKey="reliability"
-                stroke="hsl(142, 72%, 29%)"
-                strokeWidth={2}
-                dot={{ fill: 'hsl(142, 72%, 29%)', r: 4 }}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {trend.length > 0 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={trend} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(0 0% 16%)" vertical={false} />
+                <XAxis dataKey="date" tick={{ fill: 'hsl(0 0% 60%)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fill: 'hsl(0 0% 60%)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`${v}`, 'Reliability']} />
+                <Line
+                  type="monotone"
+                  dataKey="reliability"
+                  stroke="hsl(142, 72%, 29%)"
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(142, 72%, 29%)', r: 4 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-[180px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface/50 text-center">
+              <p className="text-sm font-medium text-muted">No history available</p>
+              <p className="text-xs text-muted/70">Run an audit to generate history.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

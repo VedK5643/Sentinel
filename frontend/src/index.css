@@ -63,4 +63,44 @@
       scroll-behavior: auto !important;
     }
   }
+
+  /* Professional Print Styling */
+  @media print {
+    :root {
+      --background: 0 0% 100%;
+      --surface: 0 0% 100%;
+      --border: 0 0% 80%;
+      --primary: 0 0% 10%;
+      --muted: 0 0% 40%;
+    }
+    
+    body {
+      background: white !important;
+      color: black !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Hide UI elements that shouldn't be printed */
+    nav, header, button, .sidebar, [role="navigation"] {
+      display: none !important;
+    }
+
+    /* Prevent page breaks inside cards */
+    .border {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    /* Remove border radius and shadows for cleaner print */
+    * {
+      box-shadow: none !important;
+    }
+    
+    /* Ensure charts display nicely */
+    .recharts-wrapper {
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
 }
