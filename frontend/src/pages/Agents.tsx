@@ -1,18 +1,35 @@
 import * as React from 'react';
 import { Search, SlidersHorizontal, ArrowUpDown, Bot } from 'lucide-react';
-import { MOCK_AGENTS } from '@/data/mockData';
+import { getAgents } from '@/api';
 import { AgentCard } from '@/components/AgentCard';
 import type { Agent } from '@/types';
 
 type SortKey = 'reliability' | 'lastAudit' | 'name';
 
 export default function Agents() {
+  const [agents, setAgents] = React.useState<Agent[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [query, setQuery] = React.useState('');
   const [sort, setSort] = React.useState<SortKey>('reliability');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
 
+  React.useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await getAgents();
+        setAgents(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
   const filtered = React.useMemo<Agent[]>(() => {
-    let list = [...MOCK_AGENTS];
+    let list = [...agents];
 
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -40,6 +57,19 @@ export default function Agents() {
 
     return list;
   }, [query, sort, statusFilter]);
+
+  const totalAudits = React.useMemo(
+    () => agents.reduce((sum, a) => sum + (a.lastAudit ? 1 : 0), 0),
+    [agents]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <p className="text-sm text-muted">Loading agents...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-screen-xl px-4 py-8 md:px-8">

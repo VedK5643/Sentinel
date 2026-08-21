@@ -8,7 +8,10 @@ import { ScenarioRow } from '@/components/ScenarioRow';
 import { ScoreRing } from '@/components/ui/ScoreRing';
 import { Button } from '@/components/ui/Button';
 
-interface Context { agent: Agent; }
+interface Context {
+  agent: Agent;
+  refreshAgent: () => Promise<void>;
+}
 
 const PHASE_PROGRESS: Record<string, number> = {
   idle: 0,
@@ -22,10 +25,16 @@ const PHASE_PROGRESS: Record<string, number> = {
 };
 
 export default function AgentAudits() {
-  const { agent } = useOutletContext<Context>();
+  const { agent, refreshAgent } = useOutletContext<Context>();
   const navigate = useNavigate();
 
   const sim = useAuditSimulation(agent.id);
+
+  React.useEffect(() => {
+    if (sim.phase === 'complete') {
+      refreshAgent();
+    }
+  }, [sim.phase, refreshAgent]);
 
   // Compute progress bar value
   const progressBase = PHASE_PROGRESS[sim.phase] ?? 0;

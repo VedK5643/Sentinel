@@ -20,16 +20,21 @@ export default function AgentWorkspace() {
   const [agent, setAgent] = React.useState<Agent | null>(null);
   const [loading, setLoading] = React.useState(true);
 
+  const refreshAgent = React.useCallback(async () => {
+    if (!agentId) return;
+    const data = await getAgent(agentId);
+    setAgent(data);
+  }, [agentId]);
+
   React.useEffect(() => {
     async function load() {
       if (!agentId) return;
       setLoading(true);
-      const data = await getAgent(agentId);
-      setAgent(data);
+      await refreshAgent();
       setLoading(false);
     }
     load();
-  }, [agentId]);
+  }, [agentId, refreshAgent]);
 
   if (loading) {
     return (
@@ -127,7 +132,7 @@ export default function AgentWorkspace() {
       </div>
 
       {/* Tab content rendered by nested routes */}
-      <Outlet context={{ agent }} />
+      <Outlet context={{ agent, refreshAgent }} />
     </div>
   );
 }

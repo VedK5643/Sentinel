@@ -12,7 +12,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { MOCK_AGENTS, HARDENED_AGENT, HARDENED_TREND } from '@/data/mockData';
+import { HARDENED_AGENT, HARDENED_TREND } from '@/data/mockData';
+import { getAgents } from '@/api';
 import type { Agent } from '@/types';
 
 const TOOLTIP_STYLE = {
@@ -41,7 +42,19 @@ export default function Home() {
   const featured = HARDENED_AGENT;
   const trendData = HARDENED_TREND.map(p => ({ ...p, date: formatDate(p.date) }));
   const [uploadOpen, setUploadOpen] = React.useState(false);
-  const [agents, setAgents] = React.useState<Agent[]>(MOCK_AGENTS);
+  const [agents, setAgents] = React.useState<Agent[]>([]);
+
+  React.useEffect(() => {
+    async function load() {
+      try {
+        const data = await getAgents();
+        setAgents(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    load();
+  }, []);
 
   const stats = [
     { label: 'Scenarios Run', value: featured.totalScenarios },

@@ -196,6 +196,7 @@ async def _async_audit_pipeline(run_state: RunState):
             with run_state._lock:
                 db.add(sr)
                 db.commit()
+                logger.info(f"Successfully inserted ScenarioRun {sr.id} into database.")
                 scenario_run_ids.append(str(sr.id))
 
                 if verdict == "pass":
@@ -302,6 +303,7 @@ async def _async_audit_pipeline(run_state: RunState):
         )
         db.add(scorecard)
         db.commit()
+        logger.info(f"Successfully inserted Scorecard {scorecard.id} into database.")
 
         time.sleep(0.7)
 

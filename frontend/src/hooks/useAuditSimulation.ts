@@ -5,6 +5,7 @@ import {
   getScenariosForAgent,
   getAuditResult,
 } from '@/data/simulationData';
+import { IS_LIVE, startAudit as apiStartAudit, streamAudit } from '@/api';
 
 interface AuditState {
   phase: AuditPhase;
@@ -43,15 +44,10 @@ export function useAuditSimulation(agentId: string): UseAuditSimulationReturn {
     []
   );
 
-  const startAudit = React.useCallback(async () => {
-    abortRef.current = false;
+  const startAuditMock = React.useCallback(async () => {
     const initialScenarios = getScenariosForAgent(agentId);
     setScenarios(initialScenarios);
-    setCompletedCount(0);
-    setCurrentRunningIndex(null);
-    setResult(null);
 
-    // ── Phase: Initializing → Generating → Sandbox ──
     for (const phaseDef of AUDIT_PHASES.slice(0, 3)) {
       if (abortRef.current) return;
       setPhase(phaseDef.phase);
@@ -59,7 +55,6 @@ export function useAuditSimulation(agentId: string): UseAuditSimulationReturn {
       await sleep(phaseDef.durationMs);
     }
 
-    // ── Phase: Running scenarios ──
     setPhase('running');
     setPhaseLabel('Executing scenarios…');
 
@@ -79,7 +74,6 @@ export function useAuditSimulation(agentId: string): UseAuditSimulationReturn {
 
       if (abortRef.current) return;
 
-      // Determine final verdict
       let finalStatus: ScenarioStatus;
       if (scenario.failure) {
         const sev = scenario.failure.severity;
@@ -95,29 +89,80 @@ export function useAuditSimulation(agentId: string): UseAuditSimulationReturn {
       else if (finalStatus === 'warn') warnCount++;
       else failCount++;
 
-      // Small gap between scenarios
       await sleep(200);
     }
 
-    // ── Phase: Analyzing ──
     setCurrentRunningIndex(null);
     const analyzingPhase = AUDIT_PHASES.find(p => p.phase === 'analyzing')!;
     setPhase('analyzing');
     setPhaseLabel(analyzingPhase.label);
     await sleep(analyzingPhase.durationMs);
 
-    // ── Phase: Scoring ──
     const scoringPhase = AUDIT_PHASES.find(p => p.phase === 'scoring')!;
     setPhase('scoring');
     setPhaseLabel(scoringPhase.label);
     await sleep(scoringPhase.durationMs);
 
-    // ── Complete ──
     const auditResult = getAuditResult(agentId);
     setResult(auditResult);
     setPhase('complete');
     setPhaseLabel('Audit complete');
   }, [agentId, updateScenario]);
+
+  const startAudit = React.useCallback(async () => {
+    abortRef.current = false;
+    setCompletedCount(0);
+    setCurrentRunningIndex(null);
+    setResult(null);
+
+    if (!IS_LIVE) {
+      await startAuditMock();
+      return;
+    }
+
+    setPhase('initializing');
+    setPhaseLabel('Initializing harness…');
+    setScenarios([]); // We don't know scenarios beforehand
+
+    try {
+      const { runId } = await apiStartAudit(agentId);
+      if (abortRef.current) return;
+
+      streamAudit(runId, (event: MessageEvent) => {
+        if (abortRef.current) return;
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'phase_change') {
+            setPhase(data.payload.phase);
+            setPhaseLabel(data.payload.label);
+        } else if (data.type === 'scenario_update') {
+            const s = data.payload as ScenarioResult;
+            setScenarios(prev => {
+                const idx = prev.findIndex(p => p.id === s.id);
+                if (idx >= 0) {
+                    const next = [...prev];
+                    next[idx] = s;
+                    return next;
+                }
+                return [...prev, s];
+            });
+            if (s.status === 'pass' || s.status === 'fail' || s.status === 'warn') {
+                setCompletedCount(prev => prev + 1);
+            }
+        } else if (data.type === 'complete') {
+            setResult(data.payload);
+            setPhase('complete');
+            setPhaseLabel('Audit complete');
+        }
+      }, (err) => {
+          console.error('SSE error:', err);
+      });
+    } catch (err) {
+      console.error('Failed to start audit:', err);
+      setPhase('idle');
+      setPhaseLabel('Error starting audit');
+    }
+  }, [agentId, startAuditMock]);
 
   const reset = React.useCallback(() => {
     abortRef.current = true;

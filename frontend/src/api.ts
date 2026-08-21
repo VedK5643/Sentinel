@@ -20,7 +20,7 @@ import { MOCK_AGENTS, getAgent as getMockAgent } from '@/data/mockData';
 import { getTrace as getMockTrace } from '@/data/simulationData';
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
-const IS_LIVE = BASE_URL.length > 0;
+export const IS_LIVE = BASE_URL.length > 0;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
