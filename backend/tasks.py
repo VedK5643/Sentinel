@@ -96,6 +96,25 @@ async def _async_audit_pipeline(run_state: RunState, agent_id: str):
             "payload": {"phase": "running", "label": "Executing scenarios…"},
         })
 
+        # Pre-populate scenarios on the UI so it knows the total count (e.g. 5)
+        for idx, scenario in enumerate(scenarios):
+            sr_id = uuid.uuid4()
+            scenario["_sr_id"] = sr_id  # Save it so we use the same UUID when inserting
+            cfg = CATEGORY_CONFIG.get(scenario.get("category", ""), {})
+            run_state.push_event({
+                "type": "scenario_update",
+                "payload": {
+                    "id": str(sr_id),
+                    "index": idx + 1,
+                    "title": scenario["scenario_text"][:60] + ("…" if len(scenario["scenario_text"]) > 60 else ""),
+                    "categoryId": cfg.get("id", scenario.get("category", "")),
+                    "categoryName": cfg.get("name", scenario.get("category", "")),
+                    "status": "running",
+                    "durationMs": 0,
+                    "traceId": str(sr_id),
+                }
+            })
+
         pass_count = 0
         warn_count = 0
         fail_count = 0
@@ -111,7 +130,7 @@ async def _async_audit_pipeline(run_state: RunState, agent_id: str):
                     trace = result["trace"]
                     flags = result["flags"]
                     classification = await classify(trace, flags, scenario)
-                except Exception as exc:
+                except BaseException as exc:
                     logger.error("Scenario %d failed: %s", idx, exc)
                     trace = []
                     classification = {
@@ -126,7 +145,7 @@ async def _async_audit_pipeline(run_state: RunState, agent_id: str):
             category = classification.get("category", scenario.get("category", ""))
 
             sr = ScenarioRun(
-                id=uuid.uuid4(),
+                id=scenario.get("_sr_id", uuid.uuid4()),
                 agent_id=agent.id,
                 scenario_text=scenario["scenario_text"],
                 category=scenario.get("category", category),
@@ -270,7 +289,7 @@ async def _async_audit_pipeline(run_state: RunState, agent_id: str):
             },
         })
 
-    except Exception as exc:
+    except BaseException as exc:
         logger.exception("Audit pipeline crashed: %s", exc)
         run_state.push_event({
             "type": "phase_change",

@@ -37,7 +37,7 @@ async def call_llm(system_prompt: str, user_prompt: str) -> str:
 
             client = AsyncGroq(api_key=groq_key, timeout=30.0)
             coro = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
@@ -67,7 +67,7 @@ async def call_llm(system_prompt: str, user_prompt: str) -> str:
             )
 
             # Use the recommended model version
-            model = genai.GenerativeModel('gemini-3.6-flash')
+            model = genai.GenerativeModel('gemini-1.5-flash')
             coro = model.generate_content_async(
                 combined,
                 request_options={"timeout": 30.0}
