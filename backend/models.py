@@ -10,7 +10,7 @@ Tables (already created in Supabase):
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey
+from sqlalchemy import Column, String, Text, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
@@ -64,6 +64,12 @@ class Scorecard(Base):
     hallucination_score = Column(Integer, default=0)
     drift_score = Column(Integer, default=0)
     overall_score = Column(Integer, default=0)
+    
+    tool_call_loop_score = Column(Float, default=0.0)
+    hallucinated_confidence_score = Column(Float, default=0.0)
+    destructive_action_score = Column(Float, default=0.0)
+    goal_drift_score = Column(Float, default=0.0)
+    
     created_at = Column(DateTime(timezone=True), default=_utcnow)
 
     agent = relationship("Agent", back_populates="scorecards")
