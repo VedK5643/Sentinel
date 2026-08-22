@@ -35,7 +35,7 @@ async def call_llm(system_prompt: str, user_prompt: str) -> str:
         try:
             from groq import AsyncGroq
 
-            client = AsyncGroq(api_key=groq_key)
+            client = AsyncGroq(api_key=groq_key, timeout=30.0)
             coro = client.chat.completions.create(
                 model="openai/gpt-oss-120b",
                 messages=[
@@ -68,8 +68,11 @@ async def call_llm(system_prompt: str, user_prompt: str) -> str:
 
             # Use the recommended model version
             model = genai.GenerativeModel('gemini-3.6-flash')
-            coro = model.generate_content_async(combined)
-            response = await asyncio.wait_for(coro, timeout=30.0)
+            coro = model.generate_content_async(
+                combined,
+                request_options={"timeout": 30.0}
+            )
+            response = await asyncio.wait_for(coro, timeout=35.0)
             text = response.text
             if text:
                 return text.strip()
