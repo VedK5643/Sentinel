@@ -164,7 +164,13 @@ export default function Scorecard() {
           Version History
         </h2>
         <div className="space-y-2">
-          {[...agent.versions].reverse().map(ver => (
+          {agent.versions.length === 0 ? (
+            <div className="flex h-[120px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface/50 text-center">
+              <p className="text-sm font-medium text-muted">No versions available</p>
+              <p className="text-xs text-muted/70">Run an audit to generate history.</p>
+            </div>
+          ) : (
+            [...agent.versions].reverse().map(ver => (
             <div
               key={ver.version}
               className={cn(
@@ -205,7 +211,7 @@ export default function Scorecard() {
                 </span>
               </div>
             </div>
-          ))}
+          )))}
         </div>
       </div>
     </div>

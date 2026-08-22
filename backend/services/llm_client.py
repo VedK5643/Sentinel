@@ -10,6 +10,7 @@ SDKs elsewhere.
 
 import os
 import logging
+import asyncio
 
 from dotenv import load_dotenv
 
@@ -35,7 +36,7 @@ async def call_llm(system_prompt: str, user_prompt: str) -> str:
             from groq import AsyncGroq
 
             client = AsyncGroq(api_key=groq_key)
-            response = await client.chat.completions.create(
+            coro = client.chat.completions.create(
                 model="openai/gpt-oss-120b",
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -44,6 +45,7 @@ async def call_llm(system_prompt: str, user_prompt: str) -> str:
                 temperature=0.7,
                 max_tokens=2048,
             )
+            response = await asyncio.wait_for(coro, timeout=30.0)
             text = response.choices[0].message.content
             if text:
                 logger.info(f"Groq call succeeded using model: {response.model}")
@@ -66,7 +68,8 @@ async def call_llm(system_prompt: str, user_prompt: str) -> str:
 
             # Use the recommended model version
             model = genai.GenerativeModel('gemini-3.6-flash')
-            response = await model.generate_content_async(combined)
+            coro = model.generate_content_async(combined)
+            response = await asyncio.wait_for(coro, timeout=30.0)
             text = response.text
             if text:
                 return text.strip()
