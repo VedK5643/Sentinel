@@ -29,7 +29,7 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -44,6 +44,7 @@ export default function Home() {
   const featured = HARDENED_AGENT;
   const trendData = HARDENED_TREND.map(p => ({ ...p, date: formatDate(p.date) }));
   const [uploadOpen, setUploadOpen] = React.useState(false);
+  const queryClient = useQueryClient();
   
   const { data: agents = [] } = useQuery({
     queryKey: ['agents'],
@@ -227,7 +228,7 @@ export default function Home() {
         isOpen={uploadOpen}
         onClose={() => setUploadOpen(false)}
         onSuccess={(newAgent) => {
-          setAgents(prev => [...prev, newAgent]);
+          queryClient.invalidateQueries({ queryKey: ['agents'] });
         }}
       />
 
